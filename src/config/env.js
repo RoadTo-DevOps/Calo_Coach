@@ -17,7 +17,9 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET || "development-only-secret-change-me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   corsOrigin: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+    ? process.env.CORS_ORIGIN.split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean)
     : "*",
   aiProvider: process.env.AI_PROVIDER || "fallback",
   openAiApiKey: process.env.OPENAI_API_KEY || "",

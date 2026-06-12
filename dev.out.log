@@ -195,3 +195,9 @@ API listening on port 5000
 [0mGET /api/goals/current [32m200[0m 25.090 ms - 324[0m
 Failed running 'src/server.js'. Waiting for file changes before restarting...
 Restarting 'src/server.js'
+API listening on port 5000
+Restarting 'src/server.js'
+API listening on port 5000
+Restarting 'src/server.js'
+Restarting 'src/server.js'
+API listening on port 5000
