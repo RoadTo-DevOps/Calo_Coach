@@ -68,14 +68,14 @@ function extractJson(text) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
-function getAiConfig() {
+function getAiConfig({ vision = false } = {}) {
   const provider = env.aiProvider.toLowerCase();
 
   if (provider === "openai" && env.openAiApiKey) {
     return {
       apiKey: env.openAiApiKey,
       baseUrl: env.openAiBaseUrl,
-      model: env.openAiModel
+      model: vision ? env.openAiVisionModel : env.openAiModel
     };
   }
 
@@ -83,7 +83,7 @@ function getAiConfig() {
     return {
       apiKey: env.beeApiKey,
       baseUrl: env.beeBaseUrl,
-      model: env.beeModel
+      model: vision ? env.beeVisionModel : env.beeModel
     };
   }
 
@@ -94,8 +94,22 @@ async function aiJson(prompt) {
   const config = getAiConfig();
   if (!config) return null;
 
+  return aiJsonFromMessages(
+    [
+      {
+        role: "system",
+        content:
+          "You are a nutrition and fitness assistant for a Vietnamese health tracking app. Return compact JSON only. Do not provide medical diagnosis. Do not include markdown."
+      },
+      { role: "user", content: prompt }
+    ],
+    { config, timeoutMs: env.aiTimeoutMs, maxTokens: 1200, temperature: 0.2 }
+  );
+}
+
+async function aiJsonFromMessages(messages, { config, timeoutMs, maxTokens = 1200, temperature = 0.2 }) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), env.aiTimeoutMs);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   const response = await fetch(`${config.baseUrl.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
@@ -106,16 +120,9 @@ async function aiJson(prompt) {
     },
     body: JSON.stringify({
       model: config.model,
-      temperature: 0.2,
-      max_tokens: 1200,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a nutrition and fitness assistant for a Vietnamese health tracking app. Return compact JSON only. Do not provide medical diagnosis. Do not include markdown."
-        },
-        { role: "user", content: prompt }
-      ]
+      temperature,
+      max_tokens: maxTokens,
+      messages
     })
   }).finally(() => clearTimeout(timeout));
 
@@ -215,6 +222,51 @@ Keep note short and in Vietnamese.`
     confidence: "medium",
     note: "Ước tính dự phòng. Hãy kiểm tra và chỉnh lại trước khi lưu."
   };
+}
+
+export async function estimateFoodFromImage({ buffer, mimeType, hint = "" }) {
+  const config = getAiConfig({ vision: true });
+  if (!config) {
+    throw new AppError(
+      "Food image recognition requires a configured AI provider. Set AI_PROVIDER=openai or AI_PROVIDER=beek with an API key.",
+      400,
+      { provider: env.aiProvider }
+    );
+  }
+
+  const imageB64 = buffer.toString("base64");
+  const prompt = `Analyze this food photo for a calorie tracking app.
+${hint ? `User hint: "${hint}".` : ""}
+Estimate the visible food items, portion size, total calories, and macros.
+Return JSON with exactly these keys:
+foodName, quantity, estimatedCalories, protein, carbs, fat, confidence, note.
+Use numbers for calories/protein/carbs/fat. confidence must be low, medium, or high.
+If the photo is unclear or not food, set confidence to low and explain briefly in Vietnamese note.
+Keep all user-facing text in Vietnamese. Do not include markdown.`;
+
+  const result = await aiJsonFromMessages(
+    [
+      {
+        role: "system",
+        content:
+          "You are a nutrition assistant for a Vietnamese calorie tracking app. Return compact JSON only. Do not provide medical diagnosis. Do not include markdown."
+      },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageB64}` } }
+        ]
+      }
+    ],
+    { config, timeoutMs: env.aiImageTimeoutMs, maxTokens: 900, temperature: 0.15 }
+  );
+
+  if (result?.foodName && result?.estimatedCalories !== undefined) {
+    return result;
+  }
+
+  throw new AppError("AI did not return a valid food image estimate. Please try again with a clearer photo.", 400);
 }
 
 export async function estimateExercise({ text, durationMinutes = 30, intensity = "medium", weightKg = 70 }) {

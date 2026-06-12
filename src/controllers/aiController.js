@@ -2,7 +2,15 @@ import { ExerciseLog } from "../models/ExerciseLog.js";
 import { FoodLog } from "../models/FoodLog.js";
 import { Goal } from "../models/Goal.js";
 import { UserProfile } from "../models/UserProfile.js";
-import { estimateExercise, estimateFood, healthChat, suggestMeals, suggestWorkouts } from "../services/aiService.js";
+import {
+  estimateExercise,
+  estimateFood,
+  estimateFoodFromImage,
+  healthChat,
+  suggestMeals,
+  suggestWorkouts
+} from "../services/aiService.js";
+import { AppError } from "../utils/AppError.js";
 import { summarizeNutrition } from "../services/calorieService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { todayKey } from "../utils/dateUtils.js";
@@ -27,6 +35,25 @@ async function userContext(userId) {
 
 export const estimateFoodController = asyncHandler(async (req, res) => {
   res.json({ estimate: await estimateFood(req.validated.body.text) });
+});
+
+export const estimateFoodImageController = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new AppError("Vui lĂ²ng chá»n áº£nh mĂ³n Äƒn.", 400);
+  }
+
+  const hint = String(req.body?.hint || "").trim();
+  if (hint.length > 500) {
+    throw new AppError("Ghi chú ảnh tối đa 500 ký tự.", 400);
+  }
+
+  const estimate = await estimateFoodFromImage({
+    buffer: req.file.buffer,
+    mimeType: req.file.mimetype,
+    hint
+  });
+
+  res.json({ estimate });
 });
 
 export const estimateExerciseController = asyncHandler(async (req, res) => {

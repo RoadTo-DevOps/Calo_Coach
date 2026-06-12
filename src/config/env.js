@@ -20,9 +20,12 @@ export const env = {
   aiProvider: process.env.AI_PROVIDER || "fallback",
   openAiApiKey: process.env.OPENAI_API_KEY || "",
   openAiModel: process.env.OPENAI_MODEL || "gpt-4o-mini",
+  openAiVisionModel: process.env.OPENAI_VISION_MODEL || process.env.OPENAI_MODEL || "gpt-4o-mini",
   openAiBaseUrl: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
   beeApiKey: process.env.BEE_API_KEY || "",
   beeModel: process.env.BEE_MODEL || "deepseek-chat",
+  beeVisionModel: process.env.BEE_VISION_MODEL || "gemini-3.5-flash",
   beeBaseUrl: process.env.BEE_BASE_URL || "https://platform.beeknoee.com/api/v1",
-  aiTimeoutMs: Number(process.env.AI_TIMEOUT_MS || 15000)
+  aiTimeoutMs: Number(process.env.AI_TIMEOUT_MS || 15000),
+  aiImageTimeoutMs: Number(process.env.AI_IMAGE_TIMEOUT_MS || 45000)
 };
