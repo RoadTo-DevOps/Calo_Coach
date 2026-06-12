@@ -18,6 +18,7 @@ import { profileRoutes } from "./routes/profileRoutes.js";
 export const app = express();
 
 app.set("etag", false);
+app.set("trust proxy", env.trustProxy);
 app.use(helmet());
 app.use(cors({ origin: env.corsOrigin }));
 app.use(express.json({ limit: "1mb" }));

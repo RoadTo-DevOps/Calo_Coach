@@ -69,6 +69,7 @@ File `server/.env` mau:
 ```env
 NODE_ENV=production
 PORT=5000
+TRUST_PROXY=1
 MONGO_URI=mongodb://127.0.0.1:27017/health_care
 JWT_SECRET=doi-thanh-chuoi-random-that-dai
 JWT_EXPIRES_IN=7d
@@ -79,11 +80,13 @@ AI_TIMEOUT_MS=15000
 
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
+OPENAI_VISION_MODEL=gpt-4o-mini
 OPENAI_BASE_URL=https://api.openai.com/v1
 
 BEE_API_KEY=your_beek_key_here
 BEE_BASE_URL=https://platform.beeknoee.com/api/v1
 BEE_MODEL=gemini-2.5-flash-lite
+BEE_VISION_MODEL=gemini-2.5-flash-lite
 ```
 
 Ghi chu:
@@ -159,6 +162,7 @@ server {
 
     root /var/www/health_care/client/dist;
     index index.html;
+    client_max_body_size 8M;
 
     location /api/ {
         proxy_pass http://127.0.0.1:5000/api/;
@@ -173,6 +177,12 @@ server {
         try_files $uri $uri/ /index.html;
     }
 }
+```
+
+Neu backend chay o subdomain rieng, vi du `api.calocoach.com`, them cung dong nay vao `server {}` cua subdomain API:
+
+```nginx
+client_max_body_size 8M;
 ```
 
 Enable site:
