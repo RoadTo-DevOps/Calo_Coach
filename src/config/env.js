@@ -16,7 +16,9 @@ export const env = {
   mongoUri: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/health_care",
   jwtSecret: process.env.JWT_SECRET || "development-only-secret-change-me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  corsOrigin: process.env.CORS_ORIGIN || "*",
+  corsOrigin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+    : "*",
   aiProvider: process.env.AI_PROVIDER || "fallback",
   openAiApiKey: process.env.OPENAI_API_KEY || "",
   openAiModel: process.env.OPENAI_MODEL || "gpt-4o-mini",
